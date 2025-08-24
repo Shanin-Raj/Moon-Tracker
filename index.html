@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moon Phase Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --background-color: #000000;
+            --card-color: #181818;
+            --text-color: #ffffff;
+            --primary-color: #ffe066; 
+            --border-color: #333333;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(24,24,24,0.95) 60%, rgba(255,224,102,0.08) 100%);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px 0 rgba(31,38,135,0.18);
+            padding: 2.5rem 2rem;
+            margin-top: 2rem;
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        p {
+            color: var(--text-color);
+        }
+
+        .today-card {
+            background-color: var(--card-color);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2), 0 4px 6px -2px rgba(0,0,0,0.1);
+        }
+
+        .today-card h2 {
+            margin-top: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        #today-moon-image {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 1rem 0;
+            background-color: #333333;
+        }
+
+        #today-moon-phase {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .forecast-btn {
+            background-color: var(--primary-color);
+            color: var(--background-color);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-bottom: 2rem;
+        }
+
+        .forecast-btn:hover {
+            background-color: #ffe799;
+            transform: translateY(-2px);
+        }
+
+        .forecast-container {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1rem;
+            width: 100%;
+            min-height: 150px;
+            align-items: stretch;
+        }
+
+        .forecast-card {
+            background: rgba(24,24,24,0.95);
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(255,224,102,0.10);
+            border: 1px solid rgba(255,224,102,0.10);
+            backdrop-filter: blur(4px);
+            transition: box-shadow 0.3s;
+            margin-bottom: 0.5rem;
+        }
+
+        .forecast-card:hover {
+            box-shadow: 0 12px 40px rgba(255,224,102,0.18), 0 2px 8px rgba(24,24,24,0.10);
+            transform: translateY(-4px) scale(1.03);
+            transition: box-shadow 0.3s, transform 0.3s;
+        }
+
+        .forecast-date {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin: 0 0 0.5rem 0;
+            color: var(--primary-color);
+        }
+
+        .forecast-image {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            background-color: #333333;
+        }
+
+        .forecast-phase {
+            font-size: 0.75rem;
+            margin: 0.5rem 0 0 0;
+            color: var(--text-color);
+            line-height: 1.4;
+        }
+        @media (max-width: 640px) {
+            .forecast-container {
+                grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <main class="container">
+        <h1>Moon Phase Tracker</h1>
+        <p>Explore the lunar cycle from today into the week ahead.</p>
+
+        <!-- Today's Moon Phase Section -->
+        <section class="today-card">
+            <h2>Today's Moon Phase</h2>
+            <img id="today-moon-image" alt="Current moon phase" src="https://placehold.co/96x96/0f172a/e2e8f0?text=...">
+            <p id="today-moon-phase"></p>
+        </section>
+
+        <!-- 7-day Forecast Button -->
+        <button id="forecast-btn" class="forecast-btn">Show Next 7 Days</button>
+
+        <!-- 7-day Forecast Cards Container -->
+        <section id="forecast-container" class="forecast-container"></section>
+    </main>
+
+    <script>
+        // Moon phase calculation constants
+        const LUNAR_CYCLE = 29.530588853; // Average days in a lunar cycle
+        const KNOWN_NEW_MOON = new Date('2023-01-21T18:53:00Z'); // Reference new moon date
+
+        // DOM elements
+        const todayImageEl = document.getElementById('today-moon-image');
+        const todayPhaseEl = document.getElementById('today-moon-phase');
+        const forecastBtn = document.getElementById('forecast-btn');
+        const forecastContainer = document.getElementById('forecast-container');
+
+        /**
+         * Calculate the current moon phase as a value between 0 and 1.
+         * 0 = New Moon, 0.5 = Full Moon, 1 = New Moon again.
+         */
+        function getMoonPhase(date) {
+            const diff = date.getTime() - KNOWN_NEW_MOON.getTime();
+            const days = diff / (1000 * 60 * 60 * 24);
+            const phase = (days / LUNAR_CYCLE) % 1;
+            return phase < 0 ? phase + 1 : phase;
+        }
+
+        /**
+         * Approximate the illumination percentage based on the phase.
+         * Returns a value from 0 (new moon) to 100 (full moon) and back.
+         */
+        function getIllumination(phase) {
+            if (phase <= 0.5) {
+                // Waxing (New Moon to Full Moon)
+                return Math.round(phase * 2 * 100);
+            } else {
+                // Waning (Full Moon to New Moon)
+                return Math.round((1 - phase) * 2 * 100);
+            }
+        }
+        
+        /**
+         * Returns the phase name, image URL, and illumination based on the phase value.
+         * Uses an image map to select the correct image and label.
+         * Handles both waxing and waning phases.
+         */
+        function getPhaseInfoFromIllumination(phase) {
+            const illumination = getIllumination(phase);
+
+            // Map illumination ranges to phase names and images
+            const imageMap = [
+                { range: [0, 2], name: 'New Moon', url: 'https://www.moongiant.com/images/today_phase/moon_day_new.jpg' },
+                { range: [3, 10], name: 'Waxing Crescent', url: 'https://www.moongiant.com/images/today_phase/moon_day_WaxC_0.jpg' },
+                { range: [11, 20], name: 'Waxing Crescent', url: 'https://www.moongiant.com/images/today_phase/moon_day_WaxC_5.jpg' },
+                { range: [21, 30], name: 'Waxing Crescent', url: 'https://www.moongiant.com/images/today_phase/moon_day_WaxC_15.jpg' },
+                { range: [31, 45], name: 'First Quarter', url: 'https://www.moongiant.com/images/today_phase/moon_day_WaxC_30.jpg' },
+                { range: [46, 55], name: 'First Quarter', url: 'https://www.moongiant.com/images/today_phase/moon_day_WaxC_40.jpg' },
+                { range: [56, 80], name: 'Waxing Gibbous', url: 'https://www.moongiant.com/images/today_phase/moon_day_WaxG_60.jpg' },
+                { range: [81, 97], name: 'Waxing Gibbous', url: 'https://www.moongiant.com/images/today_phase/moon_day_WaxG_75.jpg' },
+                { range: [98, 100], name: 'Full Moon', url: 'https://www.moongiant.com/images/today_phase/moon_day_full.jpg' },
+                { range: [81, 97], name: 'Waning Gibbous', url: 'https://www.moongiant.com/images/today_phase/moon_day_WanG_95.jpg' },
+                { range: [56, 80], name: 'Waning Gibbous', url: 'https://placehold.co/96x96/000/fff?text=Gibbous+56-80%25' },
+                { range: [46, 55], name: 'Last Quarter', url: 'https://placehold.co/96x96/000/fff?text=Last+Qtr+46-55%25' },
+                { range: [31, 45], name: 'Last Quarter', url: 'https://placehold.co/96x96/000/fff?text=Last+Qtr+31-45%25' },
+                { range: [21, 30], name: 'Waning Crescent', url: 'https://placehold.co/96x96/000/fff?text=Crescent+21-30%25' },
+                { range: [11, 20], name: 'Waning Crescent', url: 'https://placehold.co/96x96/000/fff?text=Crescent+11-20%25' },
+                { range: [3, 10], name: 'Waning Crescent', url: 'https://placehold.co/96x96/000/fff?text=Crescent+3-10%25' },
+            ];
+            
+            // Determine if the moon is waxing or waning
+            const isWaning = phase > 0.5;
+
+            // Find the correct entry in the map
+            let found = imageMap.find(item => {
+                const [min, max] = item.range;
+                if (illumination >= min && illumination <= max) {
+                    if (isWaning) {
+                        // For waning, only match waning, quarter, full, or new
+                        return item.name.includes('Waning') || item.name.includes('Quarter') || item.name.includes('Full') || item.name.includes('New');
+                    }
+                    // For waxing, only match waxing, quarter, full, or new
+                    return item.name.includes('Waxing') || item.name.includes('Quarter') || item.name.includes('Full') || item.name.includes('New');
+                }
+                return false;
+            });
+
+            // Fallback if no match is found
+            if (!found) {
+                found = { name: 'Moon', url: 'https://placehold.co/96x96/000/fff?text=Error' };
+            }
+
+            return { name: found.name, imageUrl: found.url, illumination };
+        }
+
+        /**
+         * Display today's moon phase in the UI.
+         * Uses UTC date to avoid timezone issues.
+         */
+        function displayTodayPhase() {
+            const now = new Date();
+            const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+            const phaseValue = getMoonPhase(todayUTC);
+            const phaseInfo = getPhaseInfoFromIllumination(phaseValue);
+
+            todayImageEl.src = phaseInfo.imageUrl;
+            todayImageEl.alt = phaseInfo.name;
+            todayPhaseEl.textContent = `${phaseInfo.name} (${phaseInfo.illumination}% illuminated)`;
+        }
+
+        /**
+         * Display the 7-day moon phase forecast.
+         * Loops through the next 7 days and creates a card for each.
+         */
+        function displayForecast() {
+            forecastContainer.innerHTML = '';
+            const now = new Date();
+
+            for (let i = 1; i <= 7; i++) {
+                // Calculate date in UTC for each forecast day
+                const futureDateUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + i));
+                const phaseValue = getMoonPhase(futureDateUTC);
+                const phaseInfo = getPhaseInfoFromIllumination(phaseValue);
+
+                const card = document.createElement('div');
+                card.className = 'forecast-card';
+
+                const dateString = futureDateUTC.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    timeZone: 'UTC'
+                });
+                
+                card.innerHTML = `
+                    <p class="forecast-date">${dateString}</p>
+                    <img class="forecast-image" src="${phaseInfo.imageUrl}" alt="${phaseInfo.name}">
+                    <p class="forecast-phase">${phaseInfo.name}<br>(${phaseInfo.illumination}%)</p>
+                `;
+
+                forecastContainer.appendChild(card);
+            }
+        }
+
+        // Event listeners for forecast button and initial load
+        forecastBtn.addEventListener('click', displayForecast);
+        window.addEventListener('DOMContentLoaded', displayTodayPhase);
+
+    </script>
+</body>
+</html>
