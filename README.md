@@ -13,7 +13,7 @@ In code comments done using GitHub copilot in VS Code.
 
 ## Usage
 
-1. Open `Main.html` in your web browser / click on provided Versal link.
+1. Open `Main.html` in your web browser / click on provided link in GitHub.
 2. View today's moon phase.
 3. Click the **Show Next 7 Days** button to see the forecast for the upcoming week.
 
